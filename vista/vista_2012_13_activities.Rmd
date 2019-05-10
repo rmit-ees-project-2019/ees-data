@@ -18,8 +18,8 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(plyr))
 suppressMessages(library(dplyr))
 
-vista_csv='vista_2012_13_dedjtr_activities.csv'
-vista_data<-read.csv(vista_csv,header = T,sep=',',stringsAsFactors = F,strip.white = T)
+vista_csv='vista_2012_13_dedjtr_activities.csv.gz'
+vista_data<-read.csv(gzfile(vista_csv,'rt'),header = T,sep=',',stringsAsFactors = F,strip.white = T)
 ```
 
 # Input Data
@@ -27,8 +27,9 @@ vista_data<-read.csv(vista_csv,header = T,sep=',',stringsAsFactors = F,strip.whi
 The Victorian Integrated Survey of Travel & Activity (VISTA) 2012-13 table of activities by time of day for weekdays and weekend days is loaded from `r vista_csv`. The file was created by:
 
 1. exporting the [VISTA 2012-13 Population Activity profile from DEDJTR](https://public.tableau.com/profile/dedjtr#!/vizhome/VISTA2012-13-Populationactivityprofile/PopulationActivityprofile) in Tableau format;
-1. loading the downloaded data in Tableuau Public Desktop; and then
-1. exporting the data from Tableau Public Desktop to CSV.
+1. loading the downloaded data in Tableuau Public Desktop; 
+1. exporting the data from Tableau Public Desktop to CSV; and
+1. compressing the CSV with GZip.
 
 (The alternative would have been to directly process the VISTA data files (also CSVs), but that requires adjusting numbers by using the weights correctly, whereas the DEDJTR file already contains the adjusted numbers.)
 
