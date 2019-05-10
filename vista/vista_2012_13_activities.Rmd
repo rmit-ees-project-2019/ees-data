@@ -1,0 +1,159 @@
+---
+title: "VISTA 2012-13 Activities"
+author: "Dhirendra Singh"
+output:
+  pdf_document: default
+  html_document:
+    keep_md: no
+urlcolor: blue
+geometry: "left=1cm,right=1cm,top=3cm,bottom=3cm"
+---
+
+# About 
+*This document was generated on `r as.character(format(Sys.Date(), format="%B %d, %Y"))`.*
+
+```{r echo=FALSE}
+suppressMessages(library(reshape2))
+suppressMessages(library(ggplot2))
+suppressMessages(library(plyr))
+suppressMessages(library(dplyr))
+
+vista_csv='vista_2012_13_dedjtr_activities.csv'
+vista_data<-read.csv(vista_csv,header = T,sep=',',stringsAsFactors = F,strip.white = T)
+```
+
+# Input Data
+
+The Victorian Integrated Survey of Travel & Activity (VISTA) 2012-13 table of activities by time of day for weekdays and weekend days is loaded from `r vista_csv`. The file was created by:
+
+1. exporting the [VISTA 2012-13 Population Activity profile from DEDJTR](https://public.tableau.com/profile/dedjtr#!/vizhome/VISTA2012-13-Populationactivityprofile/PopulationActivityprofile) in Tableau format;
+1. loading the downloaded data in Tableuau Public Desktop; and then
+1. exporting the data from Tableau Public Desktop to CSV.
+
+(The alternative would have been to directly process the VISTA data files (also CSVs), but that requires adjusting numbers by using the weights correctly, whereas the DEDJTR file already contains the adjusted numbers.)
+
+A sample record showing the structure of the input data is given below. 
+
+```{r echo=FALSE}
+print( knitr::kable(t(head(vista_data,1)), col.names = c("")))
+```
+
+\newpage
+# Data Processing
+
+```{r echo=FALSE}
+orig<-vista_data[,c("Purpose.S..group.","Population","Time1","Travdow..group.")]
+colnames(orig)<-c("Purpose","Population","Time", "DayOfWeek")
+orig$Hour<-as.numeric(lapply(orig$Time, function(y) 
+  sapply(strsplit(y,":"), function(x) {
+    x <- as.numeric(x)
+    x[1]+x[2]/60
+  })))
+orig$Hour<-orig$Hour-min(orig$Hour)
+
+week<-orig
+week$Population[is.na(week$Population)] <- 0
+week<-aggregate(week[c("Population")], by=week[c("Purpose","Hour","DayOfWeek")], sum)
+
+# remove 24th hour which is conceptually doubling up with the 0th hour
+week<-week[week$Hour<24,]
+
+# remove **Travelling / accompanying** as it represents people in transit and not at location=-based activities
+week<-week[week$Purpose!="Travelling / accompanying",]
+
+# collapse data into 2hr blocks
+week$HourRange<-cut(
+  week$Hour, right=FALSE, 
+  breaks=c(0,2,4,6,8,10,12,14,16,18,20,22,24),
+  labels = c("0-2","2-4","4-6","6-8","8-10","10-12","12-14","14-16","16-18","18-20","20-22","22-24"))
+week<-aggregate(week[c("Population")], by=week[c("Purpose","HourRange","DayOfWeek")], sum)
+
+# each time slot should add up to 100% of the population but doesn't so must be adjusted
+
+# use the largest value of population from any time bin to represent 100% of the population
+total_popn<-max(aggregate(week[c("Population")], by=week[c("HourRange","DayOfWeek")], sum)$Population)
+week$Percentage<-100*(week$Population/total_popn);
+# now find out what percentage of the population is unaccounted for in each time bin
+unknonwn<-100-aggregate(week[c("Percentage")], by=week[c("HourRange","DayOfWeek")], sum)$Percentage
+# add the unknowns to the "Other / not stated" bucket to make each time bin 100%
+week[week$Purpose=="Other / not stated",]$Percentage=week[week$Purpose=="Other / not stated",]$Percentage+unknonwn
+week$Percentage<-round(week$Percentage,1)
+```
+
+Our intent is to create a *time-of-day distribution of activities for the aggregated Melbourne population (31 LGAs)* from VISTA data, as input for the [EES synthetic population generation algorithm](https://github.com/agentsoz/synthetic-population). We do this as follows:
+
+1. Convert the hour of day (`Time1`) field to a decimal;
+1. subtract `4.0` from the hour of day since the range in the input data is `[4.0,28.0]` when it should be `[0.0,24.0]`;
+1. remove records for the 24th hour, which conceptually is the same as the 0th hour of day;
+1. remove records for the `Purpose` category **Travelling / accompanying** as it represents people in transit and not at location-based activities;  
+1. sum the time of day records into 2-hour time bins as required by the synthetic population generation algorithm;
+1. ensure that each time bin includes 100% of the population; we do this by taking the largest value of `Population` from any time bin to represent 100% of the population,  calculating how much of the population is unaccounted for in each time bin (with respect to this number), and then adding the unaccounted to the `Purpose` category **Other / not stated**;
+1. separate the data into two groups by categories **Weekdays** and **Weekend days**.
+
+\newpage
+# VISTA 2012-13 Weekday Activities by Time of Day
+
+
+```{r echo=FALSE}
+weekdays<-week[week$DayOfWeek=="Weekdays",c("Purpose", "HourRange", "Percentage")]
+df<-weekdays
+df<-aggregate(df[c("Percentage")], by=df[c("Purpose","HourRange")], sum)
+d<-melt(df, id.vars=c("Purpose", "HourRange"))
+ggplot(d, aes(HourRange,value, col=Purpose, fill=Purpose)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_bar(stat="identity", color="black", size=0.1, position = "stack") +
+  xlab("Hour of day") + ylab("Percentage of population") + 
+  ggtitle(NULL)
+
+table<-acast(weekdays, Purpose ~ HourRange, 
+             function(x) {sort(as.character(x))[1]},
+             value.var = 'Percentage', fill = '0')
+
+rnames<-rownames(table)
+rnames<-gsub("At Home", "home", rnames)
+rnames<-gsub("Education", "education", rnames)
+rnames<-gsub("Other / not stated", "other", rnames)
+rnames<-gsub("Shopping", "shop", rnames)
+rnames<-gsub("Social / Rec", "recreation", rnames)
+rnames<-gsub("Work Related", "work", rnames)
+
+table<-apply(table, 2, as.numeric)
+rownames(table)<-rnames
+write.csv(table, "vista_2012_13_activities_weekdays.csv", quote=FALSE)
+print( knitr::kable(table))
+```
+\newpage
+# VISTA 2012-13 Weekend Activities by Time of Day
+
+```{r echo=FALSE}
+weekends<-week[week$DayOfWeek=="Weekend days",c("Purpose", "HourRange", "Percentage")]
+df<-weekends
+df<-aggregate(df[c("Percentage")], by=df[c("Purpose","HourRange")], sum)
+d<-melt(df, id.vars=c("Purpose", "HourRange"))
+ggplot(d, aes(HourRange,value, col=Purpose, fill=Purpose)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_bar(stat="identity", color="black", size=0.1, position = "stack") +
+  xlab("Hour of day") + ylab("Percentage of population") + 
+  ggtitle(NULL)
+
+table<-acast(weekends, Purpose ~ HourRange, 
+             function(x) {sort(as.character(x))[1]},
+             value.var = 'Percentage', fill = '0')
+
+rnames<-rownames(table)
+rnames<-gsub("At Home", "home", rnames)
+rnames<-gsub("Education", "education", rnames)
+rnames<-gsub("Other / not stated", "other", rnames)
+rnames<-gsub("Shopping", "shop", rnames)
+rnames<-gsub("Social / Rec", "recreation", rnames)
+rnames<-gsub("Work Related", "work", rnames)
+
+table<-apply(table, 2, as.numeric)
+rownames(table)<-rnames
+
+write.csv(table, "vista_2012_13_activities_weekends.csv", quote=FALSE)
+print( knitr::kable(table))
+
+```
+
+
