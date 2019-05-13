@@ -1,0 +1,63 @@
+---
+title: "VISTA 2012-16 Activities"
+author: "Dhirendra Singh"
+output:
+  pdf_document: default
+  html_document:
+    keep_md: no
+urlcolor: blue
+geometry: "left=1cm,right=1cm,top=3cm,bottom=3cm"
+---
+
+# About 
+*This document was generated on `r as.character(format(Sys.Date(), format="%B %d, %Y"))`.*
+
+# Input Data
+
+
+The Victorian Integrated Survey of Travel & Activity (VISTA) 2012-16 data was downloaded from the following URL on 10th May 2019:
+```
+https://transport.vic.gov.au/-/media/tfv-documents/vista/vista_2012_16_v1_sa1_csv.zip
+```
+
+The Zip archive was uncompressed, and the contained CSV files recompressed using GZip giving:
+```
+./VISTA_2012_16_v1_SA1_CSV/JTW_VISTA12_16_SA1_V1.csv.gz
+./VISTA_2012_16_v1_SA1_CSV/S_VISTA12_16_SA1_V1.csv.gz
+./VISTA_2012_16_v1_SA1_CSV/H_VISTA12_16_SA1_V1.csv.gz
+./VISTA_2012_16_v1_SA1_CSV/P_VISTA12_16_SA1_V1.csv.gz
+./VISTA_2012_16_v1_SA1_CSV/JTE_VISTA12_16_sa1_V1.csv.gz
+./VISTA_2012_16_v1_SA1_CSV/T_VISTA12_16_SA1_V1.csv.gz
+```
+
+# Data Processing
+
+```{r echo=FALSE}
+source('././vista_2012_16_functions.R')
+vista_csv <- './VISTA_2012_16_v1_SA1_CSV/S_VISTA12_16_SA1_V1.csv.gz'
+out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
+out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
+extract_and_write_activities_from(vista_csv, out_weekday_activities_csv_gz, out_weekend_activities_csv_gz)
+```
+
+Describe how the activities were extracted here...
+
+
+```{r echo=FALSE}
+source('././vista_2012_16_functions.R')
+out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
+out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
+simplify_activities_and_create_groups(out_weekday_activities_csv_gz)
+simplify_activities_and_create_groups(out_weekend_activities_csv_gz)
+
+
+# Then for each person we can actually work out the trip chain as well as
+# the duration of each activity (using the start/end times of the connecting trips)
+# That would give up an accurate picture of what activities are being done in what time bins
+
+```
+
+Describe how the activities were simplified into greoups here...
+
+```{r echo=FALSE}
+```
