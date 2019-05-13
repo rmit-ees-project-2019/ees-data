@@ -33,7 +33,7 @@ The Zip archive was uncompressed, and the contained CSV files recompressed using
 # Data Processing
 
 ```{r echo=FALSE}
-source('././vista_2012_16_functions.R')
+source('./vista_2012_16_functions.R')
 vista_csv <- './VISTA_2012_16_v1_SA1_CSV/S_VISTA12_16_SA1_V1.csv.gz'
 out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
 out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
@@ -44,7 +44,7 @@ Describe how the activities were extracted here...
 
 
 ```{r echo=FALSE}
-source('././vista_2012_16_functions.R')
+source('./vista_2012_16_functions.R')
 out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
 out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
 simplify_activities_and_create_groups(out_weekday_activities_csv_gz)
@@ -60,4 +60,37 @@ simplify_activities_and_create_groups(out_weekend_activities_csv_gz)
 Describe how the activities were simplified into greoups here...
 
 ```{r echo=FALSE}
+source('./vista_2012_16_functions.R')
+out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
+out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
+out_weekday_activities_tod_csv_gz <- './vista_2012_16_extracted_activities_weekday_by_min.csv.gz'
+out_weekend_activities_tod_csv_gz <- './vista_2012_16_extracted_activities_weekend_by_min.csv.gz'
+
+extract_activities_by_minute_of_day(out_weekend_activities_csv_gz, out_weekend_activities_tod_csv_gz)
+#extract_activities_by_minute_of_day(out_weekday_activities_csv_gz, out_weekday_activities_tod_csv_gz)
+
+```
+
+```{r echo=FALSE}
+in_activities_csv_gz<-'./vista_2012_16_extracted_activities_weekend_by_min.csv.gz'
+gzfile<-in_activities_csv_gz
+gz1 <- gzfile(gzfile,'rt')
+activities<-read.csv(gz1,header = T,sep=',',stringsAsFactors = F,strip.white = T)
+close(gz1)
+
+# collapse data into 2hr blocks
+blocksize<-24*4
+df<-data.frame(row.names = seq(1:blocksize))
+for (colname in colnames(activities)) {
+  df[,colname]<-colSums(matrix(activities[,colname], ncol=blocksize))
+}
+#df$HourRange<-c("0-2","2-4","4-6","6-8","8-10","10-12","12-14","14-16","16-18","18-20","20-22","22-24")
+
+d<-melt(t(df))
+colnames(d)<-c("Activity", "HourRange", "Count")
+ggplot(d, aes(HourRange,Count, col=Activity, fill=Activity)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_bar(stat="identity", color="black", size=0.1, position = "stack") +
+  xlab("Time of day") + ylab("Percentage of population") + 
+  ggtitle(NULL)
 ```
