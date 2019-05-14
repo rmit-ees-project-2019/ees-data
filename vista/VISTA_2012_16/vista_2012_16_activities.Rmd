@@ -54,36 +54,36 @@ for (binSizeInMins in c(30,60,120)) {
 }
 ```
 \newpage
-# Weekday activities by time of day for Greater Melbourne | 30, 60, 120 Mins
+# Weekday activities by time of day for Greater Melbourne
 
 ```{r echo=FALSE, fig.width=8, fig.height=3}
 source('./vista_2012_16_functions.R')
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_30_min_bins.csv.gz')
+plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekday_30_min_bins.csv.gz')
 ```
 
 ```{r echo=FALSE, fig.width=8, fig.height=3}
 source('./vista_2012_16_functions.R')
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_60_min_bins.csv.gz')
+plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekday_60_min_bins.csv.gz')
 ```
 
 ```{r echo=FALSE, fig.width=8, fig.height=3}
 source('./vista_2012_16_functions.R')
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_120_min_bins.csv.gz')
+plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekday_120_min_bins.csv.gz')
 ```
 
-# Weekend activities by time of day for Greater Melbourne | 30, 60, 120 Mins
+# Weekend activities by time of day for Greater Melbourne
 
 ```{r echo=FALSE, fig.width=8, fig.height=3}
 source('./vista_2012_16_functions.R')
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_30_min_bins.csv.gz')
-```
-
-```{r echo=FALSE, fig.width=8, fig.height=3}
-source('./vista_2012_16_functions.R')
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_60_min_bins.csv.gz')
+plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekend_30_min_bins.csv.gz')
 ```
 
 ```{r echo=FALSE, fig.width=8, fig.height=3}
 source('./vista_2012_16_functions.R')
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_120_min_bins.csv.gz')
+plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekend_60_min_bins.csv.gz')
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=3}
+source('./vista_2012_16_functions.R')
+plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekend_120_min_bins.csv.gz')
 ```
