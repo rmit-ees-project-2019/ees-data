@@ -71,20 +71,11 @@ out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.c
 out_weekday_activities_tod_csv_gz <- './vista_2012_16_extracted_activities_weekday_by_min.csv.gz'
 out_weekend_activities_tod_csv_gz <- './vista_2012_16_extracted_activities_weekend_by_min.csv.gz'
 
-extract_activities_by_minute_of_day(out_weekend_activities_csv_gz, out_weekend_activities_tod_csv_gz)
-extract_activities_by_minute_of_day(out_weekday_activities_csv_gz, out_weekday_activities_tod_csv_gz)
+binSizeInMins<-120
+extract_activities_by_time_of_day(out_weekend_activities_csv_gz, binSizeInMins,out_weekend_activities_tod_csv_gz)
+plot_activities_by_time_of_day(out_weekend_activities_tod_csv_gz)
+extract_activities_by_time_of_day(out_weekday_activities_csv_gz, binSizeInMins, out_weekday_activities_tod_csv_gz)
+plot_activities_by_time_of_day(out_weekday_activities_tod_csv_gz)
 
 ```
 
-```{r echo=FALSE}
-source('./vista_2012_16_functions.R')
-
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_by_min.csv.gz', 30)
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_by_min.csv.gz', 60)
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_by_min.csv.gz', 120)
-
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_by_min.csv.gz', 30)
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_by_min.csv.gz', 60)
-plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_by_min.csv.gz', 120)
-
-```
