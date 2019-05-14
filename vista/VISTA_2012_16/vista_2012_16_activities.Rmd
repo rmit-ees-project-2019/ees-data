@@ -6,7 +6,7 @@ output:
   html_document:
     keep_md: no
 urlcolor: blue
-geometry: "left=1cm,right=1cm,top=3cm,bottom=3cm"
+geometry: "left=1cm,right=1cm,top=2cm,bottom=2cm"
 ---
 
 # About 
@@ -32,50 +32,58 @@ The Zip archive was uncompressed, and the contained CSV files recompressed using
 
 # Data Processing
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval = FALSE}
 source('./vista_2012_16_functions.R')
 vista_csv <- './VISTA_2012_16_v1_SA1_CSV/S_VISTA12_16_SA1_V1.csv.gz'
 out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
 out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
+
+# Extract the activities and save separately into weekday and weekend activities
 extract_and_write_activities_from(vista_csv, out_weekday_activities_csv_gz, out_weekend_activities_csv_gz)
 
-
-#orig<-vista_data[,c("PERSID", "CW_WDSTOPWGT_LGA")]
-#df<-orig[!is.na(orig$CW_WDSTOPWGT_LGA),]
-#dd<-aggregate(df,by=list(df$PERSID),FUN=head,n=1)
-#sum(dd$CW_WDSTOPWGT_LGA)
-#[1] 4002976
-#sum(dd$CW_WESTOPWGT_LGA)
-#[1] 3657450
-
-
-```
-
-Describe how the activities were extracted here...
-
-
-```{r echo=FALSE}
-source('./vista_2012_16_functions.R')
-out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
-out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
+# Simplify some activitiy classes to activity groups
 simplify_activities_and_create_groups(out_weekday_activities_csv_gz)
 simplify_activities_and_create_groups(out_weekend_activities_csv_gz)
+
+# Collapse into desired time bin sizes and write out
+for (binSizeInMins in c(30,60,120)) {
+  out_weekday_activities_tod_csv_gz <- paste0('./vista_2012_16_extracted_activities_weekday_',binSizeInMins,'_min_bins.csv.gz')
+  out_weekend_activities_tod_csv_gz <- paste0('./vista_2012_16_extracted_activities_weekend_',binSizeInMins,'_min_bins.csv.gz')
+  extract_activities_by_time_of_day(out_weekend_activities_csv_gz, binSizeInMins,out_weekend_activities_tod_csv_gz)
+  extract_activities_by_time_of_day(out_weekday_activities_csv_gz, binSizeInMins, out_weekday_activities_tod_csv_gz)
+}
 ```
+\newpage
+# Weekday activities by time of day for Greater Melbourne | 30, 60, 120 Mins
 
-Describe how the activities were simplified into groups here...
-
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=8, fig.height=3}
 source('./vista_2012_16_functions.R')
-out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
-out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
-out_weekday_activities_tod_csv_gz <- './vista_2012_16_extracted_activities_weekday_by_min.csv.gz'
-out_weekend_activities_tod_csv_gz <- './vista_2012_16_extracted_activities_weekend_by_min.csv.gz'
-
-binSizeInMins<-120
-extract_activities_by_time_of_day(out_weekend_activities_csv_gz, binSizeInMins,out_weekend_activities_tod_csv_gz)
-plot_activities_by_time_of_day(out_weekend_activities_tod_csv_gz)
-extract_activities_by_time_of_day(out_weekday_activities_csv_gz, binSizeInMins, out_weekday_activities_tod_csv_gz)
-plot_activities_by_time_of_day(out_weekday_activities_tod_csv_gz)
-
+plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_30_min_bins.csv.gz')
 ```
 
+```{r echo=FALSE, fig.width=8, fig.height=3}
+source('./vista_2012_16_functions.R')
+plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_60_min_bins.csv.gz')
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=3}
+source('./vista_2012_16_functions.R')
+plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekday_120_min_bins.csv.gz')
+```
+
+# Weekend activities by time of day for Greater Melbourne | 30, 60, 120 Mins
+
+```{r echo=FALSE, fig.width=8, fig.height=3}
+source('./vista_2012_16_functions.R')
+plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_30_min_bins.csv.gz')
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=3}
+source('./vista_2012_16_functions.R')
+plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_60_min_bins.csv.gz')
+```
+
+```{r echo=FALSE, fig.width=8, fig.height=3}
+source('./vista_2012_16_functions.R')
+plot_activities_by_time_of_day('./vista_2012_16_extracted_activities_weekend_120_min_bins.csv.gz')
+```
