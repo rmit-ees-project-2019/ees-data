@@ -1,19 +1,31 @@
 ---
-title: "VISTA 2012-16 Activities"
+title: "VISTA Activities 2012-16"
 author: "Dhirendra Singh"
 output:
-  pdf_document: default
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+  beamer_presentation: default
+  pdf_document:
+    highlight: tango
   html_document:
-    keep_md: no
+    keep_md: yes
 urlcolor: blue
-geometry: "left=1cm,right=1cm,top=2cm,bottom=2cm"
+#geometry: "left=1cm,right=1cm,top=2cm,bottom=2cm"
+fontsize: 10pt
 ---
 
-# About 
-*This document was generated on `r as.character(format(Sys.Date(), format="%B %d, %Y"))`.*
+## About 
 
-# Input Data
+*Document version: `r as.character(format(Sys.Date(), format="%B %d, %Y"))`*
 
+This document describes the process for calculating the spread of activities of Melbournians by time of day. The Victorian Integrated Survey of Travel & Activity (VISTA) 2012-16 data is used for this purpose.
+
+
+
+# Data
+
+## Sourcing VISTA 2012-16 Data
 
 The Victorian Integrated Survey of Travel & Activity (VISTA) 2012-16 data was downloaded from the following URL on 10th May 2019:
 ```
@@ -30,7 +42,104 @@ The Zip archive was uncompressed, and the contained CSV files recompressed using
 ./VISTA_2012_16_v1_SA1_CSV/T_VISTA12_16_SA1_V1.csv.gz
 ```
 
-# Data Processing
+## Understanding Stop Data
+
+We use Stop Table (`S_VISTA12_16_SA1_V1.csv`) with these select columns:
+```
+---------------------------------------------------------------------------
+Column            Description
+----------------  ---------------------------------------------------------
+PERSID            Person ID number
+TRAVDOW           Travel day day-of-week
+ORIGPURP1         Origin Purpose (Summary)
+DESTPURP1         Destination Purpose (Summary)
+STARTIME          Time of Starting Trip Stage (in minutes, from midnight)
+ARRTIME           Time of Ending Trip Stage (in minutes, from midnight)
+CW_WDSTOPWGT_LGA  Stop weight for an 'Average weekday’ of the combined 
+                  2012-14 and 2014-16 ReportingPeriods, using the ASGC.
+CW_WESTOPWGT_LGA  Stop weight for an 'Average weekend day' of the combined 
+                  2012-14 and 2014-16 ReportingPeriods, using the ASGC.
+---------------------------------------------------------------------------
+```
+## Example Stop Record for a Person
+
+```
+--------------------------------------------------------------------------------------------
+        PERSID TRAVDOW         ORIGPURP1         DESTPURP1 STARTIME ARRTIME CW_WDSTOPWGT_LGA
+-------------- ------- ----------------- ----------------- -------- ------- ----------------
+Y12H0000126P01  Friday           At Home      Work Related      475     535           139.78
+Y12H0000126P01  Friday      Work Related Personal Business      580     590           139.78
+Y12H0000126P01  Friday Personal Business      Work Related      600     610           139.78
+Y12H0000126P01  Friday      Work Related           Go Home     1050    1125           139.78
+--------------------------------------------------------------------------------------------
+```
+
+## Extracting Activities from Stop Records
+
+We convert every person's trip record:
+
+```
+--------------------------------------------------------------------------------------------
+        PERSID TRAVDOW         ORIGPURP1         DESTPURP1 STARTIME ARRTIME CW_WDSTOPWGT_LGA
+-------------- ------- ----------------- ----------------- -------- ------- ----------------
+Y12H0000126P01  Friday           At Home      Work Related      475     535           139.78
+Y12H0000126P01  Friday      Work Related Personal Business      580     590           139.78
+Y12H0000126P01  Friday Personal Business      Work Related      600     610           139.78
+Y12H0000126P01  Friday      Work Related           Go Home     1050    1125           139.78
+--------------------------------------------------------------------------------------------
+```
+
+To that person's activity record like this:
+
+```
+--------------------------------------------------------------------------------------
+        PERSID TRAVDOW          ACTIVITY  ACT.START.TIME ACT.END.TIME CW_WDSTOPWGT_LGA
+-------------- ---------------- --------- -------------- ------------ ----------------
+Y12H0000126P01  Friday           At Home               0          475           139.78
+Y12H0000126P01  Friday      Work Related             535          580           139.78
+Y12H0000126P01  Friday Personal Business             590          600           139.78
+Y12H0000126P01  Friday      Work Related             610         1050           139.78
+Y12H0000126P01  Friday           Go Home            1125         1439           139.78
+--------------------------------------------------------------------------------------
+```
+
+## Simplifying Activity Labels
+
+1. Remove `Change Mode` activitiy which is an in-transit mode-change event.
+
+1. Remove `Accompany Someone` activity which is a secondary activitiy.
+
+1. Group the remaining activities into activity groups as follows:
+   ```
+   ----------------------------------------------------------------------------------------
+   Activities                                                       Activity Group
+   ---------------------------------------------------------------- -----------------------
+   At Home, Go Home                                                 Home
+   Unknown Purpose (at start of day) Other Purpose Not Stated       Other
+   Personal Business                                                Personal
+   Work Related                                                     Work
+   Education                                                        Study
+   Buy Something                                                    Shop
+   Social Recreational                                              Social/Recreational
+   Pick-up or Drop-off Someone Pick-up or Deliver Something         Pickup/Dropoff/Deliver
+   ----------------------------------------------------------------------------------------
+   ```    
+
+## Creating Activity Bins by Time of Day
+
+1. Cut the day into fixed time bins of configurable size (30/60/120 mins)
+
+1. For every activity record, count `CW_WDSTOPWGT_LGA` persons in every time bin that overlaps
+   with the activity time
+
+1. For any time bins that do not add up to the expected population 
+   (sum of `CW_WDSTOPWGT_LGA` per unique person), scale up the time bin vector of activities
+   to the expected population size, proportionally. 
+   ```
+   dd<-aggregate(activities,by=list(activities$Person),FUN=head,n=1)
+   popnsize<-sum(dd$Count)
+   actCounts<-t(apply(actCounts,1, function(x, mx) {(x/sum(x))*mx}, mx=popnsize))
+   ```
 
 ```{r echo=FALSE, eval = FALSE}
 source('./vista_2012_16_functions.R')
@@ -53,37 +162,47 @@ for (binSizeInMins in c(30,60,120)) {
   extract_activities_by_time_of_day(out_weekday_activities_csv_gz, binSizeInMins, out_weekday_activities_tod_csv_gz)
 }
 ```
-\newpage
-# Weekday activities by time of day for Greater Melbourne
 
-```{r echo=FALSE, fig.width=8, fig.height=3}
+# Outputs
+
+## Weekday activities for Greater Melbourne | 30 min bins
+
+```{r echo=FALSE, fig.width=8, fig.height=4}
 source('./vista_2012_16_functions.R')
 plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekday_30_min_bins.csv.gz')
 ```
 
-```{r echo=FALSE, fig.width=8, fig.height=3}
+## Weekday activities for Greater Melbourne | 60 min bins
+
+```{r echo=FALSE, fig.width=8, fig.height=4}
 source('./vista_2012_16_functions.R')
 plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekday_60_min_bins.csv.gz')
 ```
 
-```{r echo=FALSE, fig.width=8, fig.height=3}
+## Weekday activities for Greater Melbourne | 120 min bins
+
+```{r echo=FALSE, fig.width=8, fig.height=4}
 source('./vista_2012_16_functions.R')
 plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekday_120_min_bins.csv.gz')
 ```
 
-# Weekend activities by time of day for Greater Melbourne
+## Weekend activities for Greater Melbourne | 30 min bins
 
-```{r echo=FALSE, fig.width=8, fig.height=3}
+```{r echo=FALSE, fig.width=8, fig.height=4}
 source('./vista_2012_16_functions.R')
 plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekend_30_min_bins.csv.gz')
 ```
 
-```{r echo=FALSE, fig.width=8, fig.height=3}
+## Weekend activities for Greater Melbourne | 60 min bins
+
+```{r echo=FALSE, fig.width=8, fig.height=4}
 source('./vista_2012_16_functions.R')
 plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekend_60_min_bins.csv.gz')
 ```
 
-```{r echo=FALSE, fig.width=8, fig.height=3}
+## Weekend activities for Greater Melbourne | 120 min bins
+
+```{r echo=FALSE, fig.width=8, fig.height=4}
 source('./vista_2012_16_functions.R')
 plot_activities_by_hour_of_day('./vista_2012_16_extracted_activities_weekend_120_min_bins.csv.gz')
 ```
