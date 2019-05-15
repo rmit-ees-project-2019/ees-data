@@ -42,9 +42,9 @@ The Zip archive was uncompressed, and the contained CSV files recompressed using
 ./VISTA_2012_16_v1_SA1_CSV/T_VISTA12_16_SA1_V1.csv.gz
 ```
 
-## Understanding Stop Data
+## Understanding Trip Data
 
-We use Stop Table (`S_VISTA12_16_SA1_V1.csv`) with these select columns:
+We use Trip Table (`T_VISTA12_16_SA1_V1.csv`) with these select columns:
 ```
 ---------------------------------------------------------------------------
 Column            Description
@@ -55,37 +55,37 @@ ORIGPURP1         Origin Purpose (Summary)
 DESTPURP1         Destination Purpose (Summary)
 STARTIME          Time of Starting Trip Stage (in minutes, from midnight)
 ARRTIME           Time of Ending Trip Stage (in minutes, from midnight)
-CW_WDSTOPWGT_LGA  Stop weight for an 'Average weekday’ of the combined 
+CW_WDTRIPWGT_LGA  Trip weight for an 'Average weekday’ of the combined 
                   2012-14 and 2014-16 ReportingPeriods, using the ASGC.
-CW_WESTOPWGT_LGA  Stop weight for an 'Average weekend day' of the combined 
+CW_WETRIPWGT_LGA  Trip weight for an 'Average weekend day' of the combined 
                   2012-14 and 2014-16 ReportingPeriods, using the ASGC.
 ---------------------------------------------------------------------------
 ```
-## Example Stop Record for a Person
+## Example Trip Record for a Person
 
 ```
 --------------------------------------------------------------------------------------------
-        PERSID TRAVDOW         ORIGPURP1         DESTPURP1 STARTIME ARRTIME CW_WDSTOPWGT_LGA
+        PERSID TRAVDOW         ORIGPURP1         DESTPURP1 STARTIME ARRTIME CW_WDTRIPWGT_LGA
 -------------- ------- ----------------- ----------------- -------- ------- ----------------
-Y12H0000126P01  Friday           At Home      Work Related      475     535           139.78
+Y12H0000126P01  Friday     At or Go Home      Work Related      475     535           139.78
 Y12H0000126P01  Friday      Work Related Personal Business      580     590           139.78
 Y12H0000126P01  Friday Personal Business      Work Related      600     610           139.78
-Y12H0000126P01  Friday      Work Related           Go Home     1050    1125           139.78
+Y12H0000126P01  Friday      Work Related     At or Go Home     1050    1125           139.78
 --------------------------------------------------------------------------------------------
 ```
 
-## Extracting Activities from Stop Records
+## Extracting Activities from Trip Records
 
 We convert every person's trip record:
 
 ```
 --------------------------------------------------------------------------------------------
-        PERSID TRAVDOW         ORIGPURP1         DESTPURP1 STARTIME ARRTIME CW_WDSTOPWGT_LGA
+        PERSID TRAVDOW         ORIGPURP1         DESTPURP1 STARTIME ARRTIME CW_WDTRIPWGT_LGA
 -------------- ------- ----------------- ----------------- -------- ------- ----------------
-Y12H0000126P01  Friday           At Home      Work Related      475     535           139.78
+Y12H0000126P01  Friday     At or Go Home      Work Related      475     535           139.78
 Y12H0000126P01  Friday      Work Related Personal Business      580     590           139.78
 Y12H0000126P01  Friday Personal Business      Work Related      600     610           139.78
-Y12H0000126P01  Friday      Work Related           Go Home     1050    1125           139.78
+Y12H0000126P01  Friday      Work Related     At or Go Home     1050    1125           139.78
 --------------------------------------------------------------------------------------------
 ```
 
@@ -93,13 +93,13 @@ To that person's activity record like this:
 
 ```
 --------------------------------------------------------------------------------------
-        PERSID TRAVDOW          ACTIVITY  ACT.START.TIME ACT.END.TIME CW_WDSTOPWGT_LGA
+        PERSID TRAVDOW          ACTIVITY  ACT.START.TIME ACT.END.TIME CW_WDTRIPWGT_LGA
 -------------- ---------------- --------- -------------- ------------ ----------------
-Y12H0000126P01  Friday           At Home               0          475           139.78
+Y12H0000126P01  Friday     At or Go Home               0          475           139.78
 Y12H0000126P01  Friday      Work Related             535          580           139.78
 Y12H0000126P01  Friday Personal Business             590          600           139.78
 Y12H0000126P01  Friday      Work Related             610         1050           139.78
-Y12H0000126P01  Friday           Go Home            1125         1439           139.78
+Y12H0000126P01  Friday     At or Go Home            1125         1439           139.78
 --------------------------------------------------------------------------------------
 ```
 
@@ -114,14 +114,14 @@ Y12H0000126P01  Friday           Go Home            1125         1439           
    ----------------------------------------------------------------------------------------
    Activities                                                       Activity Group
    ---------------------------------------------------------------- -----------------------
-   At Home, Go Home                                                 Home
-   Unknown Purpose (at start of day) Other Purpose Not Stated       Other
+   At or Go Home                                                    Home
+   Unknown purpose (at start of day), Other Purpose, Not Stated     Other
    Personal Business                                                Personal
    Work Related                                                     Work
    Education                                                        Study
    Buy Something                                                    Shop
    Social Recreational                                              Social/Recreational
-   Pick-up or Drop-off Someone Pick-up or Deliver Something         Pickup/Dropoff/Deliver
+   Pick-up or Drop-off Someone, Pick-up or Deliver Something        Pickup/Dropoff/Deliver
    ----------------------------------------------------------------------------------------
    ```    
 
@@ -129,11 +129,11 @@ Y12H0000126P01  Friday           Go Home            1125         1439           
 
 1. Cut the day into fixed time bins of configurable size (30/60/120 mins)
 
-1. For every activity record, count `CW_WDSTOPWGT_LGA` persons in every time bin that overlaps
+1. For every activity record, count `CW_WDTRIPWGT_LGA` persons in every time bin that overlaps
    with the activity time
 
 1. For any time bins that do not add up to the expected population 
-   (sum of `CW_WDSTOPWGT_LGA` per unique person), scale up the time bin vector of activities
+   (sum of `CW_WDTRIPWGT_LGA` per unique person), scale up the time bin vector of activities
    to the expected population size, proportionally. 
    ```
    dd<-aggregate(activities,by=list(activities$Person),FUN=head,n=1)
@@ -143,7 +143,7 @@ Y12H0000126P01  Friday           Go Home            1125         1439           
 
 ```{r echo=FALSE, eval = FALSE}
 source('./vista_2012_16_functions.R')
-vista_csv <- './VISTA_2012_16_v1_SA1_CSV/S_VISTA12_16_SA1_V1.csv.gz'
+vista_csv <- './VISTA_2012_16_v1_SA1_CSV/T_VISTA12_16_SA1_V1.csv.gz'
 out_weekday_activities_csv_gz <- './vista_2012_16_extracted_activities_weekday.csv.gz'
 out_weekend_activities_csv_gz <- './vista_2012_16_extracted_activities_weekend.csv.gz'
 
