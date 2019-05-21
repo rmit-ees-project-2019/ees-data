@@ -1,0 +1,82 @@
+{
+    "ees": [
+        {
+            "global": [
+                {
+                    "randomSeed": "1234",
+                    "crs": "EPSG:28355",
+                    "startHHMM": "00:00"
+                }
+            ],
+            "bdi": [
+                {
+                    "jPlanSelectionPolicy": "FIRST",
+                    "jAgents": "",
+                    "jLogLevel": "WARN",
+                    "jLogFile": "test/output/io/github/agentsoz/ees/TypicalSummerWeekday50kTest/testTypicalSummerWeekday50k/jill.log",
+                    "jOutFile": "test/output/io/github/agentsoz/ees//TypicalSummerWeekday50kTest/testTypicalSummerWeekday50k/jill.out"
+                }
+            ],
+            "matsim": [
+                {
+                    "outputDir": "test/output/io/github/agentsoz/ees//TypicalSummerWeekday50kTest/testTypicalSummerWeekday50k/matsim",
+                    "configXml": "scenarios/surf-coast-shire/typical-summer-weekday-50k/scenario_matsim_main.xml",
+                    "maxDistanceForFireVisual": "1000",
+                    "maxDistanceForSmokeVisual": "5000",
+                    "fireAvoidanceBufferForVehicles": "5000",
+                    "fireAvoidanceBufferForEmergencyVehicles": "1000",
+                    "congestionEvaluationInterval": "180",
+                    "congestionToleranceThreshold": "0.33",
+                    "congestionReactionProbability": "0.0"
+                }
+            ],
+            "phoenix": [
+                {
+                    "ignitionHHMM": "00:00",
+                    "fireGeoJson": "https://raw.githubusercontent.com/agentsoz/ees/f25dd3427060180f08716c25198d5b6e0e530fd9/scenarios/surf-coast-shire/data/phoenix/Anglesea_evac_test_ffdi104_phx5_2016data_minsup_fh2017_grid_WSG84.json",
+                    "smokeGeoJson": ""
+                }
+            ],
+            "disruption": [
+                {
+                    "fileJson": "scenarios/surf-coast-shire/typical-summer-weekday-50k/scenario_disruptions.json"
+                }
+            ],
+            "messaging": [
+                {
+                    "fileJson": "scenarios/surf-coast-shire/typical-summer-weekday-50k/scenario_messages.json"
+                }
+            ]
+        }
+    ],
+    "scenario_main": [
+        {
+            "matsimfile": "scenarios/surf-coast-shire/typical-summer-weekday-50k/scenario_matsim_main.xml",
+            "firefile": [
+                {
+                    "name": "",
+                    "coordinates": "",
+                    "format": ""
+                }
+            ],
+            "geographyfile": [
+                {
+                    "geo_name": "scenarios/surf-coast-shire/typical-summer-weekday-50k/scenario_geography.xml"
+                }
+            ],
+            "trafficBehaviour": [
+                {
+                    "proportion": "0.0",
+                    "radiusInMtrs": "0"
+                }
+            ],
+            "evacuationTiming": [
+                {
+                    "start": "00:00",
+                    "peak": "00"
+                }
+            ],
+            "bdiagents": "bdiagents"
+        }
+    ]
+}
